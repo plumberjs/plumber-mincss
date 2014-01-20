@@ -1,0 +1,29 @@
+{
+  "name": "plumber-mincss",
+  "version": "0.1.0",
+  "description": "CSS minimisation operation for Plumber pipelines",
+  "main": "index",
+  "dependencies": {
+    "plumber": "~0.1.12",
+    "q": "~0.9.7",
+    "less": "~1.6.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/plumberjs/plumber-mincss.git"
+  },
+  "keywords": [
+    "build",
+    "assets",
+    "pipeline",
+    "plumber"
+  ],
+  "author": "Sébastien Cevey <seb@cine7.net>",
+  "license": "GPL",
+  "bugs": {
+    "url": "https://github.com/plumberjs/plumber-mincss/issues"
+  }
+}
