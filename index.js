@@ -4,16 +4,28 @@ var q = require('q');
 var less = require('less');
 
 
-module.exports = function() {
-    return mapEachResource(function(resource, supervisor) {
-// TODO: check iff CSS
+function stripSourceMappingComment(source) {
+    return source.replace(/\/[*/][@#]\ssourceMappingURL[^\r\n]*/g, '');
+}
 
+// apply operation only when type matches
+function whenType(type, op) {
+  return function(resource, supervisor) {
+    if (resource.type() === type) {
+      return op(resource, supervisor);
+    } else {
+      return resource;
+    }
+  };
+}
+
+module.exports = function() {
+    return mapEachResource(whenType('css', function(resource, supervisor) {
         var parser = new less.Parser({
             filename: resource.path().absolute()
         });
         var parse = q.denodeify(parser.parse.bind(parser));
         return parse(resource.data()).then(function(tree) {
-
             var sourceMapData;
             var cssData = tree.toCSS({
                 compress: true,
@@ -26,9 +38,11 @@ module.exports = function() {
                 }
             });
 
+            // FIXME: combine with existing sourcemap
+
             return resource.
-                withData(cssData).
+                withData(stripSourceMappingComment(cssData)).
                 withSourceMap(sourceMapData);
         });
-    });
+    }));
 };
