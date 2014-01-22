@@ -7,6 +7,7 @@ chai.use(chaiAsPromised);
 require('mocha-as-promised')();
 
 var SourceMapConsumer = require('source-map').SourceMapConsumer;
+var SourceMapGenerator = require('source-map').SourceMapGenerator;
 
 
 var Resource = require('plumber').Resource;
@@ -51,24 +52,32 @@ describe('mincss', function(){
       return minimisedResources.then(function(minimised) {
         var map = new SourceMapConsumer(minimised[0].sourceMap());
         map.sources.should.deep.equal(['path/to/file.css']);
+        // .foo{color:white}.bar{border:none}
+        // ^
         map.originalPositionFor({line: 1, column: 0}).should.deep.equal({
           source: 'path/to/file.css',
           line: 1,
           column: 0,
           name: null
         });
+        // .foo{color:white}.bar{border:none}
+        //      ^
         map.originalPositionFor({line: 1, column: 5}).should.deep.equal({
           source: 'path/to/file.css',
           line: 2,
           column: 4,
           name: null
         });
+        // .foo{color:white}.bar{border:none}
+        //        ^
         map.originalPositionFor({line: 1, column: 7}).should.deep.equal({
           source: 'path/to/file.css',
           line: 2,
           column: 4, // why?
           name: null
         });
+        // .foo{color:white}.bar{border:none}
+        //                  ^
         map.originalPositionFor({line: 1, column: 17}).should.deep.equal({
           source: 'path/to/file.css',
           line: 6,
@@ -79,7 +88,109 @@ describe('mincss', function(){
     });
 
     it('should combine the existing source map with the one for the minimisation', function(){
-      // TODO
+      // TODO!
+      var generator = new SourceMapGenerator({
+        file: 'file.css'
+      });
+
+      var i;
+      for (i = 1; i <= 3; i++) {
+        generator.addMapping({
+          generated: { line: i,  column: 0 },
+          original:  { line: i,  column: 0 },
+          source: 'foo.css'
+        });
+      }
+      // Why do we need to add this?
+      generator.addMapping({
+        generated: { line: 2,  column: 4 },
+        original:  { line: 2,  column: 4 },
+        source: 'foo.css'
+      });
+      var barOffset = 5;
+      for (i = 1; i <= 3; i++) {
+        generator.addMapping({
+          generated: { line: i + barOffset,  column: 0 },
+          original:  { line: i,              column: 0 },
+          source: 'bar.css'
+        });
+      }
+
+      var originalSourceMap = generator.toString();
+
+      var resourceWithSourceMap = createResource({
+        type: 'css',
+        path: 'path/to/file.css',
+        /*
+         ==
+       1 .foo {
+       2     color: white;
+       3 }
+       4
+       5
+       6 .bar  {
+       7     border: none;
+       8 }
+         */
+        data: ".foo {\n    color: white;\n}\n\n\n.bar  {\n    border: none;\n}",
+        sourceMap: originalSourceMap
+      });
+      var minimisedResources = mincss()([resourceWithSourceMap]);
+      return minimisedResources.then(function(minimised) {
+        var map = new SourceMapConsumer(minimised[0].sourceMap());
+        map.sources.should.deep.equal(['foo.css', 'bar.css']);
+        // .foo{color:white}.bar{border:none}
+        // ^
+        map.originalPositionFor({line: 1, column: 0}).should.deep.equal({
+          source: 'foo.css',
+          line: 1,
+          column: 0,
+          name: null
+        });
+        // .foo{color:white}.bar{border:none}
+        //      ^
+        map.originalPositionFor({line: 1, column: 5}).should.deep.equal({
+          source: 'foo.css',
+          line: 2,
+          column: 4,
+          name: null
+        });
+        // FIXME: these intermediate positions don't resolve
+        // well... why? is the test input sourcemap not complete
+        // enough?
+        // .foo{color:white}.bar{border:none}
+        //       ^
+        // map.originalPositionFor({line: 1, column: 6}).should.deep.equal({
+        //   source: 'foo.css',
+        //   line: 2,
+        //   column: 5,
+        //   name: null
+        // });
+        // // .foo{color:white}.bar{border:none}
+        // //        ^
+        // map.originalPositionFor({line: 1, column: 7}).should.deep.equal({
+        //   source: 'foo.css',
+        //   line: 2,
+        //   column: 4, // why?
+        //   name: null
+        // });
+        // .foo{color:white}.bar{border:none}
+        //                 ^
+        // map.originalPositionFor({line: 1, column: 16}).should.deep.equal({
+        //   source: 'foo.css',
+        //   line: 3,
+        //   column: 0,
+        //   name: null
+        // });
+        // .foo{color:white}.bar{border:none}
+        //                  ^
+        map.originalPositionFor({line: 1, column: 17}).should.deep.equal({
+          source: 'bar.css',
+          line: 1,
+          column: 0,
+          name: null
+        });
+      });
     });
 
     it('should pass through non-CSS resources', function(){

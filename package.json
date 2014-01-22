@@ -6,6 +6,7 @@
   "dependencies": {
     "plumber": "~0.1.12",
     "q": "~0.9.7",
+    "source-map": "~0.1.31",
     "less": "~1.6.0"
   },
   "devDependencies": {
