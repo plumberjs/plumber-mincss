@@ -73,7 +73,7 @@ describe('mincss', function(){
         map.originalPositionFor({line: 1, column: 7}).should.deep.equal({
           source: 'path/to/file.css',
           line: 2,
-          column: 4, // why?
+          column: 4, // FIXME: why not 5?
           name: null
         });
         // .foo{color:white}.bar{border:none}
@@ -84,11 +84,18 @@ describe('mincss', function(){
           column: 0,
           name: null
         });
+        // .foo{color:white}.bar{border:none}
+        //                       ^
+        map.originalPositionFor({line: 1, column: 22}).should.deep.equal({
+          source: 'path/to/file.css',
+          line: 7,
+          column: 4,
+          name: null
+        });
       });
     });
 
     it('should combine the existing source map with the one for the minimisation', function(){
-      // TODO!
       var generator = new SourceMapGenerator({
         file: 'file.css'
       });
@@ -155,25 +162,15 @@ describe('mincss', function(){
           column: 4,
           name: null
         });
-        // FIXME: these intermediate positions don't resolve
-        // well... why? is the test input sourcemap not complete
-        // enough?
         // .foo{color:white}.bar{border:none}
         //       ^
-        // map.originalPositionFor({line: 1, column: 6}).should.deep.equal({
-        //   source: 'foo.css',
-        //   line: 2,
-        //   column: 5,
-        //   name: null
-        // });
-        // // .foo{color:white}.bar{border:none}
-        // //        ^
-        // map.originalPositionFor({line: 1, column: 7}).should.deep.equal({
-        //   source: 'foo.css',
-        //   line: 2,
-        //   column: 4, // why?
-        //   name: null
-        // });
+        map.originalPositionFor({line: 1, column: 6}).should.deep.equal({
+          source: 'foo.css',
+          line: 2,
+          column: 4, // FIXME: why not 5?
+          name: null
+        });
+        // FIXME: closing brace not mapped correctly?
         // .foo{color:white}.bar{border:none}
         //                 ^
         // map.originalPositionFor({line: 1, column: 16}).should.deep.equal({
@@ -188,6 +185,14 @@ describe('mincss', function(){
           source: 'bar.css',
           line: 1,
           column: 0,
+          name: null
+        });
+        // .foo{color:white}.bar{border:none}
+        //                       ^
+        map.originalPositionFor({line: 1, column: 22}).should.deep.equal({
+          source: 'bar.css',
+          line: 2,
+          column: 0, // FIXME: why not 4?
           name: null
         });
       });
