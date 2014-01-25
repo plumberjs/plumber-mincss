@@ -91,8 +91,9 @@ function whenType(type, op) {
 
 module.exports = function() {
     return mapEachResource(whenType('css', function(resource, supervisor) {
+        var resourcePath = resource.path();
         var parser = new less.Parser({
-            filename: resource.path().absolute()
+            filename: resourcePath && resourcePath.absolute()
         });
         var parse = q.denodeify(parser.parse.bind(parser));
         return parse(resource.data()).then(function(tree) {
