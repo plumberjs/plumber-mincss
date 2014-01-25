@@ -14,44 +14,6 @@ function remapSourceMap(originalMapData, sourceMapData, dest) {
         file: dest.filename()
     });
 
-// FIXME: don't need this mapping?
-//     // Rebase the mapping from the originalMap (if any)
-//     originalMap.eachMapping(function(originalMapping) {
-//         var generated = minimiseMap.generatedPositionFor({
-//             line:   originalMapping.generatedLine,
-//             column: originalMapping.generatedColumn,
-//             source: dest.path().absolute()
-//             // source: originalMapping.source
-//         });
-// console.log({
-//     transitional: {
-//             line:   originalMapping.generatedLine,
-//             column: originalMapping.generatedColumn,
-//             source: dest.path().absolute()
-//     },
-//             generated: {
-//                 line:   generated.line,
-//                 column: generated.column
-//             },
-//             original: {
-//                 line:   originalMapping.originalLine,
-//                 column: originalMapping.originalColumn
-//             },
-//             source: originalMapping.source
-//         })
-//         generator.addMapping({
-//             generated: {
-//                 line:   generated.line,
-//                 column: generated.column
-//             },
-//             original: {
-//                 line:   originalMapping.originalLine,
-//                 column: originalMapping.originalColumn
-//             },
-//             source: originalMapping.source
-//         });
-//     });
-
     // Rebase the mapping from the originalMap (if any)
     minimiseMap.eachMapping(function(minimiseMapping) {
         var original = originalMap.originalPositionFor({
