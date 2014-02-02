@@ -11,6 +11,7 @@ var SourceMapGenerator = require('source-map').SourceMapGenerator;
 
 
 var Resource = require('plumber').Resource;
+var SourceMap = require('mercator').SourceMap;
 
 var mincss = require('..');
 
@@ -123,7 +124,7 @@ describe('mincss', function(){
         });
       }
 
-      var originalSourceMap = generator.toString();
+      var originalSourceMap = SourceMap.fromMapData(generator.toString());
 
       var resourceWithSourceMap = createResource({
         type: 'css',

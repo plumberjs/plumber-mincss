@@ -1,54 +1,19 @@
 var mapEachResource = require('plumber').mapEachResource;
+var mercator = require('mercator');
+var SourceMap = mercator.SourceMap;
 
 var q = require('q');
 var less = require('less');
 
-var SourceMapConsumer = require('source-map').SourceMapConsumer;
-var SourceMapGenerator = require('source-map').SourceMapGenerator;
-
-function remapSourceMap(originalMapData, sourceMapData, dest) {
-    var originalMap = new SourceMapConsumer(originalMapData);
-    var minimiseMap = new SourceMapConsumer(sourceMapData);
-
-    var generator = new SourceMapGenerator({
-        file: dest.filename()
-    });
-
-    // Rebase the mapping from the originalMap (if any)
-    minimiseMap.eachMapping(function(minimiseMapping) {
-        var original = originalMap.originalPositionFor({
-            line:   minimiseMapping.originalLine,
-            column: minimiseMapping.originalColumn
-        });
-        generator.addMapping({
-            generated: {
-                line:   minimiseMapping.generatedLine,
-                column: minimiseMapping.generatedColumn
-            },
-            original: {
-                line:   original.line,
-                column: original.column
-            },
-            source: original.source
-        });
-    });
-
-    return generator.toString();
-}
-
-function stripSourceMappingComment(source) {
-    return source.replace(/\/[*/][@#]\ssourceMappingURL[^\r\n]*/g, '');
-}
-
 // apply operation only when type matches
 function whenType(type, op) {
-  return function(resource, supervisor) {
-    if (resource.type() === type) {
-      return op(resource, supervisor);
-    } else {
-      return resource;
-    }
-  };
+    return function(resource, supervisor) {
+        if (resource.type() === type) {
+            return op(resource, supervisor);
+        } else {
+            return resource;
+        }
+    };
 }
 
 module.exports = function() {
@@ -74,16 +39,17 @@ module.exports = function() {
                 }
             });
 
+            var data = mercator.stripSourceMappingComment(cssData);
+            var sourceMap = SourceMap.fromMapData(sourceMapData);
+
             // If the source had a sourcemap, rebase the minimisation
             // sourcemap based on that original map
             var originalMapData = resource.sourceMap();
             if (originalMapData) {
-                sourceMapData = remapSourceMap(originalMapData, sourceMapData, resource);
+               sourceMap = originalMapData.apply(sourceMap);
             }
 
-            return resource.
-                withData(stripSourceMappingComment(cssData)).
-                withSourceMap(sourceMapData);
+            return resource.withData(data, sourceMap);
         });
     }));
 };
