@@ -32,11 +32,13 @@ describe('mincss', function(){
 
   describe('#apply', function() {
     var resource;
+    var data = ".foo {\n    color: white;\n}\n\n\n.bar  {\n    border: none;\n}";
+
     beforeEach(function() {
       resource = createResource({
         type: 'css',
         path: 'path/to/file.css',
-        data: ".foo {\n    color: white;\n}\n\n\n.bar  {\n    border: none;\n}"
+        data: data
       });
     });
 
@@ -53,6 +55,8 @@ describe('mincss', function(){
       return minimisedResources.then(function(minimised) {
         var map = new SourceMapConsumer(minimised[0].sourceMap());
         map.sources.should.deep.equal(['path/to/file.css']);
+        map.sourcesContent.should.deep.equal([data]);
+
         // .foo{color:white}.bar{border:none}
         // ^
         map.originalPositionFor({line: 1, column: 0}).should.deep.equal({
@@ -124,6 +128,11 @@ describe('mincss', function(){
         });
       }
 
+      var fooData = '.foo {\n    color: white;\n}\n';
+      var barData = '.bar  {\n    border: none;\n}';
+      generator.setSourceContent('foo.css', fooData);
+      generator.setSourceContent('bar.css', barData);
+
       var originalSourceMap = SourceMap.fromMapData(generator.toString());
 
       var resourceWithSourceMap = createResource({
@@ -147,6 +156,8 @@ describe('mincss', function(){
       return minimisedResources.then(function(minimised) {
         var map = new SourceMapConsumer(minimised[0].sourceMap());
         map.sources.should.deep.equal(['foo.css', 'bar.css']);
+        map.sourcesContent.should.deep.equal([fooData, barData]);
+
         // .foo{color:white}.bar{border:none}
         // ^
         map.originalPositionFor({line: 1, column: 0}).should.deep.equal({

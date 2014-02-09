@@ -33,6 +33,8 @@ module.exports = function() {
 
                 sourceMap: true,
                 sourceMapFilename: resource.sourceMapFilename(),
+                // fill sourcesContent
+                outputSourceFiles: true,
                 writeSourceMap: function writeSourceMap(data) {
                     // this whole pseudo async is somewhat ridiculous
                     sourceMapData = data;
