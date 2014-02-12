@@ -42,6 +42,14 @@ describe('mincss', function(){
       });
     });
 
+    it('should return the same CSS resource with a .min filename', function(){
+      var minimisedResources = mincss()([resource]);
+      return minimisedResources.then(function(minimised) {
+        minimised.length.should.equal(1);
+        minimised[0].filename().should.equal('file.min.css');
+      });
+    });
+
     it('should return the same CSS resource with contents minimised', function(){
       var minimisedResources = mincss()([resource]);
       return minimisedResources.then(function(minimised) {

@@ -51,7 +51,9 @@ module.exports = function() {
                sourceMap = originalMapData.apply(sourceMap);
             }
 
-            return resource.withData(data, sourceMap);
+            return resource.
+                withTransformation('minimised', 'min').
+                withData(data, sourceMap);
         });
     }));
 };
