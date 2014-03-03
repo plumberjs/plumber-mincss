@@ -1,15 +1,15 @@
-var mapEachResource = require('plumber').mapEachResource;
+var operation = require('plumber').operation;
 var mercator = require('mercator');
 var SourceMap = mercator.SourceMap;
 
-var q = require('q');
+var highland = require('highland');
 var less = require('less');
 
 // apply operation only when type matches
 function whenType(type, op) {
-    return function(resource, supervisor) {
+    return function(resource) {
         if (resource.type() === type) {
-            return op(resource, supervisor);
+            return op(resource);
         } else {
             return resource;
         }
@@ -17,13 +17,13 @@ function whenType(type, op) {
 }
 
 module.exports = function() {
-    return mapEachResource(whenType('css', function(resource, supervisor) {
+    return operation.map(whenType('css', function(resource) {
         var resourcePath = resource.path();
         var parser = new less.Parser({
             filename: resourcePath && resourcePath.absolute()
         });
-        var parse = q.denodeify(parser.parse.bind(parser));
-        return parse(resource.data()).then(function(tree) {
+        var parse = highland.wrapCallback(parser.parse.bind(parser));
+        return parse(resource.data()).map(function(tree) {
             var sourceMapData;
             var cssData = tree.toCSS({
                 // cleancss is better than compress, but it doesn't
