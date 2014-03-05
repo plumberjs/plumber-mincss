@@ -1,14 +1,11 @@
 var chai = require('chai');
 chai.should();
-var chaiAsPromised = require("chai-as-promised");
-
-chai.use(chaiAsPromised);
-
-require('mocha-as-promised')();
 
 var SourceMapConsumer = require('source-map').SourceMapConsumer;
 var SourceMapGenerator = require('source-map').SourceMapGenerator;
 
+
+var runOperation = require('plumber-util-test').runOperation;
 
 var Resource = require('plumber').Resource;
 var SourceMap = require('mercator').SourceMap;
@@ -42,25 +39,27 @@ describe('mincss', function(){
       });
     });
 
-    it('should return the same CSS resource with a .min filename', function(){
-      var minimisedResources = mincss()([resource]);
-      return minimisedResources.then(function(minimised) {
+    it('should return the same CSS resource with a .min filename', function(done){
+      var minimisedResources = runOperation(mincss(), [resource]).resources;
+      return minimisedResources.toArray(function(minimised) {
         minimised.length.should.equal(1);
         minimised[0].filename().should.equal('file.min.css');
+        done();
       });
     });
 
-    it('should return the same CSS resource with contents minimised', function(){
-      var minimisedResources = mincss()([resource]);
-      return minimisedResources.then(function(minimised) {
+    it('should return the same CSS resource with contents minimised', function(done){
+      var minimisedResources = runOperation(mincss(), [resource]).resources;
+      return minimisedResources.toArray(function(minimised) {
         minimised.length.should.equal(1);
         minimised[0].data().should.equal('.foo{color:white}.bar{border:none}');
+        done();
       });
     });
 
-    it('should return a source map for the minimisation', function(){
-      var minimisedResources = mincss()([resource]);
-      return minimisedResources.then(function(minimised) {
+    it('should return a source map for the minimisation', function(done){
+      var minimisedResources = runOperation(mincss(), [resource]).resources;
+      return minimisedResources.toArray(function(minimised) {
         var map = new SourceMapConsumer(minimised[0].sourceMap());
         map.sources.should.deep.equal(['path/to/file.css']);
         map.sourcesContent.should.deep.equal([data]);
@@ -105,10 +104,12 @@ describe('mincss', function(){
           column: 4,
           name: null
         });
+
+        done();
       });
     });
 
-    it('should combine the existing source map with the one for the minimisation', function(){
+    it('should combine the existing source map with the one for the minimisation', function(done){
       var generator = new SourceMapGenerator({
         file: 'file.css'
       });
@@ -160,8 +161,8 @@ describe('mincss', function(){
         data: ".foo {\n    color: white;\n}\n\n\n.bar  {\n    border: none;\n}",
         sourceMap: originalSourceMap
       });
-      var minimisedResources = mincss()([resourceWithSourceMap]);
-      return minimisedResources.then(function(minimised) {
+      var minimisedResources = runOperation(mincss(), [resourceWithSourceMap]).resources;
+      return minimisedResources.toArray(function(minimised) {
         var map = new SourceMapConsumer(minimised[0].sourceMap());
         map.sources.should.deep.equal(['foo.css', 'bar.css']);
         map.sourcesContent.should.deep.equal([fooData, barData]);
@@ -215,10 +216,12 @@ describe('mincss', function(){
           column: 0, // FIXME: why not 4?
           name: null
         });
+
+        done();
       });
     });
 
-    it('should pass through non-CSS resources', function(){
+    it('should pass through non-CSS resources', function(done){
       var jsResources = [
         createResource({
           type: 'javascript',
@@ -226,8 +229,11 @@ describe('mincss', function(){
           data: 'var x = 3;'
         })
       ];
-      var minimisedResources = mincss()(jsResources);
-      return minimisedResources.should.eventually.deep.equal(jsResources);
+      var minimisedResources = runOperation(mincss(), jsResources).resources;
+      return minimisedResources.toArray(function(minimised) {
+        minimised.should.deep.equal(jsResources);
+        done();
+      });
     });
   });
 
