@@ -17,43 +17,46 @@ function whenType(type, op) {
 }
 
 module.exports = function() {
-    return operation.map(whenType('css', function(resource) {
-        var resourcePath = resource.path();
-        var parser = new less.Parser({
-            filename: resourcePath && resourcePath.absolute()
-        });
-        var parse = highland.wrapCallback(parser.parse.bind(parser));
-        return parse(resource.data()).map(function(tree) {
-            var sourceMapData;
-            var cssData = tree.toCSS({
-                // cleancss is better than compress, but it doesn't
-                // support source maps properly yet...
-                // https://github.com/GoalSmashers/clean-css/issues/125
-                compress: true,
-
-                sourceMap: true,
-                sourceMapFilename: resource.sourceMapFilename(),
-                // fill sourcesContent
-                outputSourceFiles: true,
-                writeSourceMap: function writeSourceMap(data) {
-                    // this whole pseudo async is somewhat ridiculous
-                    sourceMapData = data;
-                }
+    // FIXME: using operation.parallelFlatMap causes tests to fail?
+    return operation(function(resources) {
+        return resources.flatMap(whenType('css', function(resource) {
+            var resourcePath = resource.path();
+            var parser = new less.Parser({
+                filename: resourcePath && resourcePath.absolute()
             });
+            var parse = highland.wrapCallback(parser.parse.bind(parser));
+            return parse(resource.data()).map(function(tree) {
+                var sourceMapData;
+                var cssData = tree.toCSS({
+                    // cleancss is better than compress, but it doesn't
+                    // support source maps properly yet...
+                    // https://github.com/GoalSmashers/clean-css/issues/125
+                    compress: true,
 
-            var data = mercator.stripSourceMappingComment(cssData);
-            var sourceMap = SourceMap.fromMapData(sourceMapData);
+                    sourceMap: true,
+                    sourceMapFilename: resource.sourceMapFilename(),
+                    // fill sourcesContent
+                    outputSourceFiles: true,
+                    writeSourceMap: function writeSourceMap(data) {
+                        // this whole pseudo async is somewhat ridiculous
+                        sourceMapData = data;
+                    }
+                });
 
-            // If the source had a sourcemap, rebase the minimisation
-            // sourcemap based on that original map
-            var originalMapData = resource.sourceMap();
-            if (originalMapData) {
-               sourceMap = originalMapData.apply(sourceMap);
-            }
+                var data = mercator.stripSourceMappingComment(cssData);
+                var sourceMap = SourceMap.fromMapData(sourceMapData);
 
-            return resource.
-                withTransformation('minimised', 'min').
-                withData(data, sourceMap);
-        });
-    }));
+                // If the source had a sourcemap, rebase the minimisation
+                // sourcemap based on that original map
+                var originalMapData = resource.sourceMap();
+                if (originalMapData) {
+                    sourceMap = originalMapData.apply(sourceMap);
+                }
+
+                return resource.
+                    withTransformation('minimised', 'min').
+                    withData(data, sourceMap);
+            });
+        }));
+    });
 };
