@@ -4,7 +4,7 @@
   "description": "CSS minimisation operation for Plumber pipelines",
   "main": "index",
   "dependencies": {
-    "plumber": "git://github.com/plumberjs/plumber.git#highland",
+    "plumber": "~0.3.0",
     "mercator": "~0.1.5",
     "highland": "~1.16.2",
     "less": "~1.6.0"
