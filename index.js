@@ -1,8 +1,8 @@
 var operation = require('plumber').operation;
+var Rx = require('plumber').Rx;
 var mercator = require('mercator');
 var SourceMap = mercator.SourceMap;
 
-var highland = require('highland');
 var less = require('less');
 
 // apply operation only when type matches
@@ -11,7 +11,7 @@ function whenType(type, op) {
         if (resource.type() === type) {
             return op(resource);
         } else {
-            return resource;
+            return Rx.Observable.return(resource);
         }
     };
 }
@@ -24,7 +24,7 @@ module.exports = function() {
             var parser = new less.Parser({
                 filename: resourcePath && resourcePath.absolute()
             });
-            var parse = highland.wrapCallback(parser.parse.bind(parser));
+            var parse = Rx.Node.fromNodeCallback(parser.parse.bind(parser));
             return parse(resource.data()).map(function(tree) {
                 var sourceMapData;
                 var cssData = tree.toCSS({

@@ -4,13 +4,14 @@
   "description": "CSS minimisation operation for Plumber pipelines",
   "main": "index",
   "dependencies": {
-    "plumber": "~0.3.0",
     "mercator": "~0.1.5",
-    "highland": "~1.16.2",
     "less": "~1.6.0"
   },
+  "dependencies": {
+    "plumber": "~0.4.0"
+  },
   "devDependencies": {
-    "plumber-util-test": "~0.3.0",
+    "plumber-util-test": "~0.4.0",
     "mocha": "~1.16.2",
     "chai": "~1.8.1",
     "source-map": "~0.1.31"
