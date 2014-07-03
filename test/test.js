@@ -5,7 +5,7 @@ var SourceMapConsumer = require('source-map').SourceMapConsumer;
 var SourceMapGenerator = require('source-map').SourceMapGenerator;
 
 
-var runOperation = require('plumber-util-test').runOperation;
+var runAndCompleteWith = require('plumber-util-test').runAndCompleteWith;
 
 var Resource = require('plumber').Resource;
 var SourceMap = require('mercator').SourceMap;
@@ -16,6 +16,11 @@ var mincss = require('..');
 function createResource(params) {
   return new Resource(params);
 }
+
+function resourcesError() {
+  chai.assert(false, "error in resources observable");
+}
+
 
 describe('mincss', function(){
   it('should be a function', function(){
@@ -40,26 +45,21 @@ describe('mincss', function(){
     });
 
     it('should return the same CSS resource with a .min filename', function(done){
-      var minimisedResources = runOperation(mincss(), [resource]).resources;
-      return minimisedResources.toArray(function(minimised) {
+      runAndCompleteWith(mincss(), [resource], function(minimised) {
         minimised.length.should.equal(1);
         minimised[0].filename().should.equal('file.min.css');
-        done();
-      });
+      }, resourcesError, done);
     });
 
     it('should return the same CSS resource with contents minimised', function(done){
-      var minimisedResources = runOperation(mincss(), [resource]).resources;
-      return minimisedResources.toArray(function(minimised) {
+      runAndCompleteWith(mincss(), [resource], function(minimised) {
         minimised.length.should.equal(1);
         minimised[0].data().should.equal('.foo{color:white}.bar{border:none}');
-        done();
-      });
+      }, resourcesError, done);
     });
 
     it('should return a source map for the minimisation', function(done){
-      var minimisedResources = runOperation(mincss(), [resource]).resources;
-      return minimisedResources.toArray(function(minimised) {
+      runAndCompleteWith(mincss(), [resource], function(minimised) {
         var map = new SourceMapConsumer(minimised[0].sourceMap());
         map.sources.should.deep.equal(['path/to/file.css']);
         map.sourcesContent.should.deep.equal([data]);
@@ -104,9 +104,7 @@ describe('mincss', function(){
           column: 4,
           name: null
         });
-
-        done();
-      });
+      }, resourcesError, done);
     });
 
     it('should combine the existing source map with the one for the minimisation', function(done){
@@ -161,8 +159,8 @@ describe('mincss', function(){
         data: ".foo {\n    color: white;\n}\n\n\n.bar  {\n    border: none;\n}",
         sourceMap: originalSourceMap
       });
-      var minimisedResources = runOperation(mincss(), [resourceWithSourceMap]).resources;
-      return minimisedResources.toArray(function(minimised) {
+
+      runAndCompleteWith(mincss(), [resourceWithSourceMap], function(minimised) {
         var map = new SourceMapConsumer(minimised[0].sourceMap());
         map.sources.should.deep.equal(['foo.css', 'bar.css']);
         map.sourcesContent.should.deep.equal([fooData, barData]);
@@ -216,9 +214,7 @@ describe('mincss', function(){
           column: 0, // FIXME: why not 4?
           name: null
         });
-
-        done();
-      });
+      }, resourcesError, done);
     });
 
     it('should pass through non-CSS resources', function(done){
@@ -229,11 +225,9 @@ describe('mincss', function(){
           data: 'var x = 3;'
         })
       ];
-      var minimisedResources = runOperation(mincss(), jsResources).resources;
-      return minimisedResources.toArray(function(minimised) {
+      runAndCompleteWith(mincss(), jsResources, function(minimised) {
         minimised.should.deep.equal(jsResources);
-        done();
-      });
+      }, resourcesError, done);
     });
   });
 
