@@ -8,7 +8,10 @@ var less = require('less');
 // apply operation only when type matches
 function whenType(type, op) {
     return function(resource, supervisor) {
-        if (resource.type() === type) {
+        if (typeof resource.type === 'string') {
+            // probably a Report, pass it through
+            return resource;
+        } else if (resource.type() === type) {
             return op(resource, supervisor);
         } else {
             return resource;
